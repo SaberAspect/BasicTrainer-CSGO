@@ -26,11 +26,11 @@ void InitImGui(LPDIRECT3DDEVICE9 pDevice)
 //Globals
 bool init = false;
 bool show = false;
-enum Hacks { BHOP = false, ESP = false, AIMBOT = false, RCS = false, GLOW = false, TRIGGERBOT = false, RADAR = false };
-bool bHop = BHOP, esp = ESP, aimbot = AIMBOT, rcs = RCS, glow = GLOW, triggerbot = TRIGGERBOT, radar = RADAR;
+bool bHop = false, esp = false, aimbot = false, rcs = false, glow = false, triggerbot = false, radar = false;
 static const char* bones[]{ "Waist", "Base", "Nape", "Spine", "Belly Button", "Ribs", "Chest", "Neck", "Head", "Chin", "Breast", "Left Shoulder", "Left Elbow", "Left Wrist" };
-int selectedItem = 0;
-static bool smooth, fov, key, debug;
+static const char* algos[]{ "Distance", "Health" };
+int selectedBone = 0, selectedAlgorithm = 0;
+static bool smooth, fov, key, sort = true;
 static float smoothness;
 static int fovRange, hexCode;
 static std::string keyCode = "Enter hex code";
@@ -50,8 +50,6 @@ long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice)
 	}
 	if (GetAsyncKeyState(VK_END) & 1)
 	{
-		FreeConsole();
-		fclose((FILE*)stdout);
 		kiero::shutdown();
 		return 0;
 	}
@@ -67,7 +65,7 @@ long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice)
 		ImGui::SameLine();
 		ImGui::Checkbox("BHop", &bHop);
 		ImGui::SameLine();
-		ImGui::Checkbox("Debug", &debug);
+		ImGui::Checkbox("Glow", &glow);
 		if (aimbot)
 		{
 			ImGui::Spacing();
@@ -101,26 +99,32 @@ long __stdcall hkEndScene(LPDIRECT3DDEVICE9 pDevice)
 			if (fov)
 				ImGui::SliderInt("Fov Range", &fovRange, 5, 180);
 			ImGui::Spacing();
-			ImGui::Combo("Bone", &selectedItem, bones, IM_ARRAYSIZE(bones));
+			ImGui::Checkbox("Sorted", &sort);
+			ImGui::Spacing();
+			if (sort)
+			{
+				ImGui::Combo("Algorithm", &selectedAlgorithm, algos, IM_ARRAYSIZE(algos));
+			}
+			ImGui::Combo("Bone", &selectedBone, bones, IM_ARRAYSIZE(bones));
 		}
-		if (debug)
-			AllocConsole();
-
-		if (!debug)
+		if (glow)
 		{
-			FreeConsole();
-			fclose((FILE*)stdout);
+			//Do color stuff
 		}
-		ImGui::End();
 
+
+
+		ImGui::End();
 		ImGui::EndFrame();
 		ImGui::Render();
 		ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 	}
 	if (aimbot)
-		aimBot(smooth, smoothness, fov, fovRange, selectedItem, key, hexCode); //Make a traceRay feature and a target lock
+		aimBot(smooth, smoothness, fov, fovRange, selectedBone, key, hexCode, sort, selectedAlgorithm); //Make a traceRay feature and a target lock
 	if (bHop)
 		BHop();
+	if (glow)
+		Glow();
 	return oEndScene(pDevice);
 }
 
@@ -170,6 +174,8 @@ DWORD WINAPI MainThread(LPVOID lpReserved)
 	} while (!attached);
 	return TRUE;
 }
+
+
 
 BOOL WINAPI DllMain(HMODULE hMod, DWORD dwReason, LPVOID lpReserved)
 {

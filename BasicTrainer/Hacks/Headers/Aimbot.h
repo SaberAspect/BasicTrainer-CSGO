@@ -10,4 +10,4 @@ Enemy* getClosestEnemy();
 //Lowest Health
 Enemy* getLowestHealthEnemy();
 //run
-void aimBot(bool, float, bool, int, int, bool, int);
+void aimBot(bool, float, bool, int, int, bool, int, bool, int);
